@@ -1,0 +1,293 @@
+-- 1
+Retrieve the details of all cancelled bookings along with the corresponding cancellation fees:
+SELECT user_id, package_id, booking_id, cancellation_id, cancellation_fees
+FROM Cancellation NATURAL JOIN Cancelled;
+-- 2
+Give the average rating and count of reviews package-wise:
+SELECT p.package_id, p.package_name, avg(pf.rating) AS average_rating, count(pf.rating) AS review_count
+FROM Packages AS p LEFT JOIN Pack_Feedback AS pf ON p.package_id = pf.package_id
+GROUP BY p.package_id, p.package_name;
+
+-- 3
+Give average salary of guides with minimum 6 years of experiences:
+SELECT avg(salary) AS average_salary
+FROM Guide WHERE yrs_of_experience >= 6;
+
+--4
+Give details of all packages along with the total number of bookings and the average rating of each packeges:
+SELECT p.package_id, p.package_name, count(pb.booking_id) AS total_bookings, avg(pf.rating) AS average_rating
+FROM ((Packages AS p LEFT JOIN Package_Booking AS pb ON p.package_id = pb.package_id)
+      LEFT JOIN Pack_Feedback AS pf ON pb.user_id = pf.user_id AND pb.package_id = pf.package_id AND pb.booking_id = pf.booking_id)
+GROUP BY p.package_id, p.package_name;
+
+--5
+Find the top 3 most booked packges:
+SELECT p.package_id, p.package_name, count(pb.booking_id) AS total_bookings
+FROM Packages AS p NATURAL JOIN Package_Booking AS pb
+GROUP BY p.package_id, p.package_name
+ORDER BY total_bookings DESC LIMIT 3;
+
+--6
+Give details of users who have booked packges but not given any feedback yet:
+SELECT u.user_id, u.username, pb.package_id, pb.booking_id
+FROM User_ AS u NATURAL JOIN Package_Booking AS pb
+WHERE pb.booking_id NOT IN (SELECT DISTINCT booking_id FROM Pack_Feedback);
+
+--7
+Give top 2 most common used payment method:
+SELECT id.payment_method, count(*) AS num_bookings
+FROM Payment_done AS pd NATURAL JOIN invoice_details AS id
+GROUP BY id.payment_method
+ORDER BY num_bookings DESC LIMIT 2;
+
+--8
+Give user_id with name of the client who has selected guide himself not by the help of the agent:
+SELECT u.user_id, u.username
+FROM User_ AS u NATURAL JOIN Commission_earned_guide AS ceg
+WHERE chosen_by='Client';
+
+--9
+Give user details who has used any promocode atleast one time:
+SELECT DISTINCT u.user_id, u.username
+FROM User_ AS u NATURAL JOIN Discount_offer AS d_o;
+
+--10
+Give gender wise average salary of guide:
+SELECT u.gender, avg(ge.salary) AS avg_salary
+FROM Guide AS ge NATURAL JOIN User_ AS u
+GROUP BY gender;
+
+-- 11
+Retrieve details of packages along with the total number of bookings and the average rating of each package, sorted by the highest average rating:
+SELECT p.package_id, p.package_name, p.description_, count(pb.booking_id) AS total_bookings, avg(pf.rating) AS average_rating
+FROM ((Packages AS p LEFT JOIN Package_Booking AS pb ON p.package_id = pb.package_id)
+      LEFT JOIN Pack_Feedback pf ON pb.user_id = pf.user_id AND pb.package_id = pf.package_id AND pb.booking_id = pf.booking_id)
+GROUP BY p.package_id, p.package_name, p.description_
+ORDER BY average_rating DESC;
+
+-- 12
+Retrieves the top 3 most booked packages along with their details:
+SELECT u.user_id, u.username, avg(g.salary) AS average_guide_salary
+FROM ((((User_ AS u NATURAL JOIN LoggedInUser AS lu)
+      NATURAL JOIN Package_Booking AS pb)
+      NATURAL JOIN Guide_feedback AS gf)
+      NATURAL JOIN Guide AS g)
+WHERE lu.premium = 'Yes'
+GROUP BY u.user_id, u.username
+HAVING avg(g.salary) > (SELECT avg(salary) FROM Guide);
+
+-- 13
+List all packages along with the total number of bookings and the total revenue generated from each package:  
+SELECT p.package_id, p.package_name, count(pb.booking_id) AS total_bookings, sum(p.price) AS total_revenue
+FROM Packages AS p LEFT JOIN Package_Booking AS pb ON p.package_id = pb.package_id
+GROUP BY p.package_id, p.package_name;
+
+-- 14
+Retrieve the details of packages that have not been booked yet:
+SELECT * FROM Packages
+WHERE package_id NOT IN (SELECT DISTINCT package_id FROM Package_Booking);
+
+-- 15
+List the top 5 most common languages known among guides:
+SELECT lk.language_, count(lk.guide_id) AS language_count
+FROM Languages_Known AS lk
+GROUP BY lk.language_
+ORDER BY language_count DESC LIMIT 5;
+
+-- 16
+Look up tourist destinations in particular states:
+SELECT A.name_ FROM Accommodation AS A
+WHERE A.address_ LIKE '%Delhi%';
+
+-- 17
+Look up famous locations (Ratings > 7.5) in particular regions according to climatic conditions:
+SELECT p.package_name, p.arrival_dest, p.best_season, PF.rating
+FROM Packages AS p LEFT JOIN Pack_Feedback  AS PF ON p.package_id= PF.package_id
+WHERE p.best_season = 'Winter' AND PF.rating > 7.5;
+
+-- 18
+Show travel packs in a given range of budget (15000 < budget < 25000):
+SELECT * FROM Packages
+WHERE price BETWEEN 15000 AND 25000;
+
+-- 19
+Find the total number of bookings made for each level of preference (e.g., high, medium, low):
+SELECT preference_level, count(*) AS total_bookings
+FROM ((Preferences AS p NATURAL JOIN Preference_details AS pd)
+      NATURAL JOIN Package_Booking AS pb)
+GROUP BY preference_level;
+
+-- 20
+Give all ongoing offers information for a particular package having a rating >= 5:
+SELECT p.package_name, po.*
+FROM ((Packages AS p NATURAL JOIN Pack_Feedback AS PF)
+      NATURAL JOIN Discount_offer AS po)
+WHERE PF.rating>=5 AND p.departure_dest='Delhi' AND p.arrival_dest= 'Ranthambore';
+
+-- 21
+Find the top 5 most preferred food by users:
+SELECT interest_details AS destination, count(*) AS preference_count
+FROM Preferences AS p NATURAL JOIN Preference_details AS pd
+WHERE pd.interest_category = 'Food'
+GROUP BY destination
+ORDER BY preference_count DESC LIMIT 5;
+
+-- 22
+Retrieve the total number of bookings made by users who have preferences for specific transportation types (e.g., flight, train):
+SELECT count(*) AS total_bookings, pd.interest_details AS transportation_type
+FROM ((Preferences AS p NATURAL JOIN Preference_details AS pd)
+      NATURAL JOIN Package_Booking AS pb)
+WHERE pd.interest_category = 'Adventure'
+GROUP BY transportation_type;
+
+-- 23
+Give all the transaction history for a given Month and list outstanding payment of each invoice:
+SELECT user_id, package_id, booking_id, transaction_id, outstanding 
+FROM Invoice_details NATURAL JOIN Payment_Done
+WHERE EXTRACT(MONTH FROM inv_date) = '12' AND outstanding<>0;
+
+-- 24
+Search for extra fun adventure activities other than in the common package at the forest location:
+SELECT * FROM Accommodation WHERE amenities LIKE '%Board Games%';
+
+-- 25
+Provide all transport options For Delhi to Manali having luxury class in it:  
+SELECT * FROM Transportation
+WHERE depart_location = 'Delhi' AND dest_location = 'Manali' AND classtype = 'Luxury';
+
+-- 26
+Look up for highest profit generation packages in 2023 and their best season for travel:
+SELECT package_id, count(paid), best_season
+FROM ((Packages NATURAL JOIN Invoice_details)
+      NATURAL JOIN Payment_Done)
+WHERE EXTRACT(YEAR FROM inv_date) = '2023'
+GROUP BY package_id
+ORDER BY count(paid) DESC LIMIT 1;
+
+-- 27
+Give the details (user_id, username, email_id) of the users whohave not booked a single package yet:
+SELECT u.user_id, u.username, u.email_id
+FROM User_ AS u NATURAL JOIN
+	(SELECT user_id FROM loggedINUser WHERE user_id NOT IN
+	 (SELECT DISTINCT user_id FROM package_booking)) AS r;
+
+-- 28
+Give the details of the clients who have done the payment of more than 15000 by cash:
+SELECT pb.user_id, pb.package_id, pb.booking_id, pd.transaction_id
+FROM ((package_booking AS pb NATURAL JOIN payment_done AS pd)
+	NATURAL JOIN invoice_details AS i_d)
+WHERE pd.paid>=15000 AND i_d.payment_method='Cash';
+
+-- 29
+List the reviews of the guides whose ratings lesser than 7 and list the lkanguages known by these  guides:
+SELECT DISTINCT r.guide_id, lk.language_, r.rating, r.review
+FROM languages_known AS lk NATURAL JOIN (SELECT guide_id, rating, review
+FROM guide_feedback
+WHERE rating<7) AS r;
+
+-- 30
+Retrieve the top 5 agents who earned the highest commission and the number of bookings done by them:
+SELECT cea.agent_id, count(*) AS total_bookings, sum(cea.amount) AS total_commission_earned
+FROM Commission_earned_agent AS cea
+GROUP BY cea.agent_id
+ORDER BY total_commission_earned DESC LIMIT 5;
+
+-- 31
+Retrieve all bookings along with the details of the associated accommodation and transportation:
+SELECT p.package_id, a.name_ AS accommodation_name, t.carrier_company AS transportation_company, t.type_ AS transportation_type
+FROM (accommodation AS a NATURAL JOIN Accom_details AS ad
+	JOIN Packages AS p ON p.package_id=ad.package_id)
+	JOIN (Transportation AS t NATURAL JOIN Trans_details AS td) ON td.package_id = p.package_id;
+
+-- 32
+Find the average salary of guides who specialize in 'Adventure Sports' and have more than 4 years of experience:
+SELECT avg(salary) AS avg_salary FROM Guide
+WHERE specialization='Adventure Tourism' AND yrs_of_experience>=4;
+
+-- 33
+Find the top 5 most popular destinations (arrival destinations) based on the number of bookings made in the last 6 months:
+SELECT p.arrival_dest, count(pb.booking_id) AS total_bookings
+FROM Packages AS p NATURAL JOIN Package_Booking AS pb
+WHERE pb.booking_date >= CURRENT_DATE - INTERVAL '6 months'
+GROUP BY p.arrival_dest
+ORDER BY total_bookings DESC LIMIT 5;
+
+-- 34
+Retrieve the top 3 travel agents who have earned the highest commission from packages booked by users with a premium account:
+SELECT ceg.agent_id, ta.salary, sum(ceg.amount) AS total_commission
+FROM ((Commission_earned_agent AS ceg NATURAL JOIN Travel_Agent AS ta)
+      NATURAL JOIN LoggedInUser AS lu)
+WHERE lu.premium='Yes'
+GROUP BY ceg.agent_id, ta.salary
+ORDER BY total_commission DESC LIMIT 3;
+
+-- 35
+List of refunds (with refund details) to be made to the company by the Agent:
+SELECT sum(refund_amount) AS total_refund_amount
+FROM Package_Booking NATURAL JOIN Cancelled NATURAL JOIN Cancellation
+WHERE done_by LIKE 'Agent%';
+
+-- 36
+Customers who have given agent a poor rating:
+SELECT user_id, username FROM User_ NATURAL JOIN Agent_Feedback WHERE rating<=3;
+
+-- 37
+Retrieve the details of packages along with the number of members booked for each package and their average age:
+SELECT p.package_id, p.package_name, count(ti.member_id) AS total_members, avg(gm.age) AS average_age
+FROM (((Packages AS p LEFT JOIN Package_Booking AS pb ON p.package_id = pb.package_id)
+      LEFT JOIN Traveller_info AS ti ON pb.user_id = ti.user_id AND pb.package_id = ti.package_id AND pb.booking_id = ti.booking_id)
+      LEFT JOIN Group_members gm ON ti.member_id = gm.member_id)
+GROUP BY p.package_id, p.package_name;
+
+-- 38
+Give all Guide- Client communication logs for a given tour package:
+SELECT * FROM Client_Guide_logs
+WHERE user_id=7;
+
+-- 39
+Find the average age of travelers who booked packages for each destination and their respective genders:
+SELECT p.arrival_dest, u.gender, avg(gm.age) AS average_age
+FROM ((((Packages AS p NATURAL JOIN Package_Booking AS pb)
+      NATURAL JOIN Traveller_info AS ti)
+      NATURAL JOIN Group_members AS gm)
+      NATURAL JOIN User_ AS u)
+GROUP BY p.arrival_dest, u.gender;
+
+-- 40
+Give the package id of the package that is most visited by the tourists:
+SELECT p.package_id, count(ti.member_id) AS people_visited
+FROM (((Packages AS p NATURAL JOIN Package_Booking AS pb)
+      NATURAL JOIN Group_Members)
+      NATURAL JOIN Traveller_info AS ti)
+GROUP BY package_id
+ORDER BY people_visited DESC LIMIT 1;
+
+-- 41
+Search for the package info that is most visited by the tourists:
+SELECT PK.* FROM Packages as PK NATURAL JOIN (SELECT p.package_id FROM (((Packages AS p NATURAL JOIN Package_Booking AS pb)
+      NATURAL JOIN Group_Members)
+      NATURAL JOIN Traveller_info AS ti)
+GROUP BY package_id
+ORDER BY (count(ti.member_id)) DESC LIMIT 1) AS SK;
+
+-- 42
+List down the guides that are both having roles as guide and agent as well:
+SELECT guide_id FROM Guide
+INTERSECT
+SELECT agent_id FROM Travel_Agent;
+
+-- 43
+List the users who have worked only as the travel agent:
+SELECT agent_id FROM Travel_Agent
+EXCEPT
+SELECT guide_id FROM Guide
+EXCEPT
+SELECT admin_id FROM Admin
+EXCEPT
+SELECT user_id FROM LoggedInUser;
+
+-- 44
+List the users that have the role of Guide or Travel agent:
+SELECT agent_id FROM Travel_Agent
+UNION
+SELECT guide_id FROM Guide;

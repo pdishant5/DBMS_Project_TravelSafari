@@ -1,0 +1,415 @@
+CREATE SCHEMA TravelSafari;
+
+SET SEARCH_PATH TO TravelSafari;
+
+CREATE TABLE User_
+(
+    user_id int,
+    username varchar(40),
+    email_id varchar(40),
+    contact_number varchar(10),
+    pincode varchar(6),
+    address_ varchar(100),
+    gender varchar(6),
+    PRIMARY KEY (user_id)
+);
+
+CREATE TABLE Roles
+(
+	user_id int,
+	user_role varchar(20),
+	PRIMARY KEY (user_id, user_role),
+	FOREIGN KEY (user_id) REFERENCES User_(user_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE LoggedInUser
+(
+    user_id int,
+    premium varchar(3),
+    PRIMARY KEY (user_id),
+    FOREIGN KEY (user_id) REFERENCES User_(user_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Travel_Agent
+(
+	agent_id int PRIMARY KEY,
+	salary numeric(7,2),
+	FOREIGN KEY (agent_id) REFERENCES User_(user_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Guide
+(
+    guide_id int,
+    yrs_of_experience int,
+    specialization varchar(100),
+    salary numeric(7,2),
+    availability_status varchar(15),
+    PRIMARY KEY (guide_id),
+    FOREIGN KEY (guide_id) REFERENCES User_(user_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Languages_Known
+(
+    guide_id int,
+    language_ varchar(15),
+    PRIMARY KEY (guide_id,language_),
+    FOREIGN KEY (guide_id) REFERENCES Guide(guide_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Admin
+(
+    admin_id int,
+    skills varchar(100),
+    salary numeric(7,2),
+    department varchar(20),
+    PRIMARY KEY (admin_id)
+);
+
+CREATE TABLE Packages
+(
+    package_id int,
+    package_name varchar(50),
+    departure_dest varchar(25),
+    arrival_dest varchar(25),
+    duration varchar(30),
+    itinerary varchar(150),
+    price numeric(7,2),
+    best_season varchar(20),
+    age_grp varchar(10),
+    grp_size varchar(12),
+    availability_ varchar(15),
+    description_ varchar(1000),
+    inclusions varchar(500),
+    exclusions varchar(500),
+    PRIMARY KEY (package_id)
+);
+
+CREATE TABLE Package_Booking
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    booking_date date,
+    booking_status varchar(15),
+    no_of_members varchar(20),
+    done_by varchar(15),
+    PRIMARY KEY (user_id,package_id,booking_id),
+    FOREIGN KEY (user_id) REFERENCES LoggedInUser(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (package_id) REFERENCES Packages(package_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Accommodation
+(
+    accom_id int,
+    type_ varchar(15),
+    name_ varchar(50),
+    address_ varchar(100),
+    contact_no varchar(10),
+    pincode varchar(6),
+    room_type varchar(20),
+    room_price numeric(7,2),
+    room_capacity int,
+    payment_method_accepted varchar(80),
+    cancellation_policy varchar(300),
+    checkin_time varchar(10),
+    checkout_time varchar(10),
+    availability_ varchar(10),
+    amenities varchar(500),
+    PRIMARY KEY (accom_id)
+);
+
+CREATE TABLE Accom_details
+(
+    package_id int,
+    accom_id int,
+    PRIMARY KEY (package_id,accom_id),
+    FOREIGN KEY (package_id) REFERENCES Packages(package_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (accom_id) REFERENCES Accommodation(accom_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Accom_booking
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    accom_id int,
+    PRIMARY KEY (user_id,package_id,booking_id,accom_id),
+    FOREIGN KEY (user_id,package_id,booking_id) REFERENCES Package_Booking(user_id,package_id,booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (accom_id) REFERENCES Accommodation(accom_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Transportation
+(
+    trans_id int,
+    type_ varchar(10),
+    carrier_company varchar(50),
+    classtype varchar(15),
+    available_seats int,
+    price numeric(7,2),
+    depart_location varchar(25),
+    dest_location varchar(25),
+    route_ varchar(50),
+    depart_time varchar(15),
+    arrival_time varchar(15),
+    payment_method_accepted varchar(80),
+    cancellation_policy varchar(300),
+    amenities varchar(500),
+    PRIMARY KEY (trans_id)
+);
+
+CREATE TABLE Trans_details
+(
+    package_id int,
+    trans_id int,
+    PRIMARY KEY (package_id,trans_id),
+    FOREIGN KEY (package_id) REFERENCES Packages(package_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (trans_id) REFERENCES Transportation(trans_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Trans_Booking
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    trans_id int,
+    PRIMARY KEY (user_id,package_id,booking_id,trans_id),
+    FOREIGN KEY (user_id,package_id,booking_id) REFERENCES Package_Booking(user_id,package_id,booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (trans_id) REFERENCES Transportation(trans_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE ExpenseTracking
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    guide_id int,
+    date_time timestamp,
+    amount numeric(7,2),
+    status_ varchar(10),
+    category varchar(10),
+    payment_method varchar(15),
+    description_ varchar(150),
+    PRIMARY KEY (user_id,package_id,booking_id,guide_id,date_time),
+    FOREIGN KEY (user_id,package_id,booking_id) REFERENCES Package_Booking(user_id,package_id,booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (guide_id) REFERENCES Guide(guide_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Group_members
+(
+	member_id int PRIMARY KEY,
+	name_ varchar(40),
+	age int,
+	gender varchar(6),
+	contact_no varchar(10)
+);
+
+CREATE TABLE Traveller_info
+(
+	user_id int,
+	package_id int,
+	booking_id int,
+	member_id int,
+	PRIMARY KEY (user_id, package_id, booking_id, member_id),
+	FOREIGN KEY (user_id, package_id, booking_id) REFERENCES Package_Booking(user_id, package_id, booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (member_id) REFERENCES Group_members(member_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Invoice_details
+(
+    transaction_id int,
+    payment_method varchar(20),
+    PRIMARY KEY (transaction_id)
+);
+
+CREATE TABLE Payment_done
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    transaction_id int,
+    inv_date date,
+    time_ varchar(15),
+    paid numeric(7,2),
+    outstanding numeric(7,2),
+    PRIMARY KEY (user_id,package_id,booking_id,transaction_id),
+    FOREIGN KEY (user_id,package_id,booking_id) REFERENCES Package_Booking(user_id,package_id,booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (transaction_id) REFERENCES Invoice_details(transaction_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Cancellation
+(
+    cancellation_id int,
+    cancellation_fees numeric(7,2),
+    PRIMARY KEY (cancellation_id)
+);
+
+CREATE TABLE Cancelled
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    cancellation_id int,
+    date_ date,
+    status_ varchar(15),
+    reason varchar(150),
+    refund_amount numeric(7,2),
+    PRIMARY KEY (user_id,package_id,booking_id,cancellation_id),
+    FOREIGN KEY (user_id,package_id,booking_id) REFERENCES Package_Booking(user_id,package_id,booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (cancellation_id) REFERENCES Cancellation(cancellation_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Pack_Feedback
+(
+    user_id int,
+    package_id int,
+    booking_id int,
+    rating int,
+    review varchar(300),
+    date_ date,
+    PRIMARY KEY (user_id,package_id,booking_id),
+    FOREIGN KEY (user_id,package_id,booking_id) REFERENCES Package_Booking(user_id,package_id,booking_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Agent_feedback
+(
+	user_id int,
+	package_id int,
+	booking_id int,
+	agent_id int,
+	rating int,
+	review varchar(300),
+	date_ date,
+	PRIMARY KEY (user_id, package_id, booking_id, agent_id),
+	FOREIGN KEY (user_id, package_id, booking_id) REFERENCES Package_Booking(user_id, package_id, booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (agent_id) REFERENCES Travel_Agent(agent_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Guide_feedback
+(
+	user_id int,
+	package_id int,
+	booking_id int,
+	guide_id int,
+	rating int,
+	review varchar(300),
+	date_ date,
+	PRIMARY KEY (user_id, package_id, booking_id, guide_id),
+	FOREIGN KEY (user_id, package_id, booking_id) REFERENCES Package_Booking(user_id, package_id, booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (guide_id) REFERENCES Guide(guide_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Commission_earned_agent
+(
+	user_id int,
+	package_id int,
+	booking_id int,
+	agent_id int,
+	date_ date,
+	details varchar(250),
+	amount numeric(7,2),
+	PRIMARY KEY (user_id, package_id, booking_id, agent_id),
+	FOREIGN KEY (user_id, package_id, booking_id) REFERENCES Package_Booking(user_id, package_id, booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (agent_id) REFERENCES Travel_Agent(agent_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Commission_earned_guide
+(
+	user_id int,
+	package_id int,
+	booking_id int,
+	guide_id int,
+	date_ date,
+	details varchar(250),
+	amount numeric(7,2),
+	chosen_by varchar(20),
+	PRIMARY KEY (user_id, package_id, booking_id, guide_id),
+	FOREIGN KEY (user_id, package_id, booking_id) REFERENCES Package_Booking(user_id, package_id, booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (guide_id) REFERENCES Guide(guide_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Preference_details
+(
+	pref_id int PRIMARY KEY,
+	preference_level varchar(20),
+	interest_category varchar(20),
+	interest_details varchar(300)
+);
+
+CREATE TABLE Preferences
+(
+	user_id int,
+	pref_id int,
+	PRIMARY KEY (user_id, pref_id),
+	FOREIGN KEY (user_id) REFERENCES LoggedInUser(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (pref_id) REFERENCES Preference_details(pref_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Promotion
+(
+	promotion_id varchar(20) PRIMARY KEY,
+	type_ varchar(10),
+	title varchar(25),
+	description_ varchar(1000),
+	status_ varchar(10),
+	startdate varchar(15),
+	enddate varchar(15),
+	conditions varchar(300)
+);
+
+CREATE TABLE Discount_offer
+(
+	user_id int,
+	package_id int,
+	booking_id int,
+	promotion_id varchar(20),
+	offered_discount numeric(7,2),
+	PRIMARY KEY (user_id, package_id, booking_id, promotion_id),
+	FOREIGN KEY (user_id, package_id, booking_id) REFERENCES Package_Booking(user_id, package_id, booking_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (promotion_id) REFERENCES Promotion(promotion_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE TABLE Client_Agent_logs
+(
+	user_id int,
+	agent_id int,
+	date_time timestamp,
+	type_ varchar(15),
+	to_whom varchar(6),
+	subject_ varchar(20),
+	status_ varchar(15),
+	content varchar(300),
+	PRIMARY KEY (user_id, agent_id, date_time),
+	FOREIGN KEY (user_id) REFERENCES LoggedInUser(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (agent_id) REFERENCES Travel_Agent(agent_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Client_Guide_logs
+(
+    user_id int,
+    guide_id int,
+    date_time timestamp,
+    type_ varchar(15),
+    to_whom varchar(6),
+    subject_ varchar(20),
+    status_ varchar(15),
+    content varchar(300),
+    PRIMARY KEY (user_id,guide_id,date_time),
+    FOREIGN KEY (user_id) REFERENCES LoggedInUser(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (guide_id) REFERENCES Guide(guide_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Agent_Guide_logs
+(
+	agent_id int,
+	guide_id int,
+	date_time timestamp,
+	type_ varchar(15),
+	to_whom varchar(6),
+	subject_ varchar(20),
+	status_ varchar(15),
+	content varchar(300),
+	PRIMARY KEY (agent_id, guide_id, date_time),
+	FOREIGN KEY (agent_id) REFERENCES Travel_Agent(agent_id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (guide_id) REFERENCES Guide(guide_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
